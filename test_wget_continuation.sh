@@ -1,4 +1,4 @@
-VERSION="20130618.05"
+VERSION="20130618.06"
 SSL_CERT_DIR=`pwd`/certs ./wget-lua \
 --restrict-file-names=windows \
 -e robots=off \

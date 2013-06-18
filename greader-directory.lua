@@ -53,7 +53,7 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
 
   -- progress message
   url_count = url_count + 1
-  if url_count % 500 == 0 then
+  if url_count % 50 == 0 then
     print(" - Downloaded "..url_count.." URLs")
   end
 

@@ -1,4 +1,4 @@
-greader-directory-grab NOT READY YET
+greader-directory-grab
 ======================
 
 Seesaw script that grabs Google Reader's Feed Directory for Archive Team's Google Reader grab: http://www.archiveteam.org/index.php?title=Google_Reader

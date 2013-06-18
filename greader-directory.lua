@@ -57,6 +57,11 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     print(" - Downloaded "..url_count.." URLs")
   end
 
+  -- Stop at 1000 in case we have a bug or Google has a bug
+  if current_start >= 1000 then
+    return {}
+  end
+
   if not file then
     return {}
   end

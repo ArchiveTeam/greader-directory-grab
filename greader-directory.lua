@@ -29,15 +29,20 @@ end
 
 url_count = 0
 
-url_with_continuation = function(url, continuation)
-  assert(string.len(continuation) == 12, "continuation should be 12 bytes, was " .. string.len(continuation))
-  if string.find(url, "%?c=............&") then
-    return string.gsub(url, "%?c=............&", "?c=" .. continuation .. "&", 1)
+url_with_start = function(url, start)
+  if string.find(url, "&start=[0-9]+") then
+    return string.gsub(url, "&start=[0-9]+", "&start=" .. start, 1)
   end
-  return string.gsub(url, "%?", "?c=" .. continuation .. "&", 1)
+  return url .. "&start=" .. start
 end
 
+current_start = 0
+
 wget.callbacks.get_urls = function(file, url, is_css, iri)
+  if not string.find(url, "&start=[0-9]+") then
+    current_start = 0
+  end
+
   -- progress message
   url_count = url_count + 1
   if url_count % 500 == 0 then
@@ -68,11 +73,10 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     return {}
   end
 
-  -- TODO!
-  --local continuation = string.match(page, '"continuation":"(C..........C)"')
-  --if continuation then
-  --  return {{url=url_with_continuation(url, continuation), link_expect_html=0}}
-  --end
+  if string.match(page, ',"hasnextpage":true,') then
+    current_start = current_start + 10
+    return {{url=url_with_start(url, current_start), link_expect_html=0}}
+  end
 
   return {}
 end
@@ -83,8 +87,8 @@ wget.callbacks.httploop_result = function(url, err, http_stat)
     -- Long delay because people like to run with way too much concurrency
     delay = 600
 
-    io.stdout:write("\nServer returned status "..code.."; this is probably a CAPTCHA page.\n")
-    io.stdout:write("You may want to move to another IP.  Waiting for "..delay.." seconds and exiting...\n")
+    io.stdout:write("\nServer returned status "..code.."; we may need a new Google cookie.\n")
+    io.stdout:write("Please report this to #donereading.  Waiting for "..delay.." seconds and exiting...\n")
     io.stdout:flush()
 
     os.execute("sleep "..delay)

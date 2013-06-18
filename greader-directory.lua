@@ -37,10 +37,12 @@ url_with_start = function(url, start)
 end
 
 current_start = 0
+grab_next_anyway = true
 
 wget.callbacks.get_urls = function(file, url, is_css, iri)
   if not string.find(url, "&start=[0-9]+") then
     current_start = 0
+    grab_next_anyway = true
   end
 
   -- progress message
@@ -73,8 +75,16 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     return {}
   end
 
-  if string.match(page, ',"hasnextpage":true,') then
+  local hasnextpage = string.match(page, '"hasnextpage":true')
+  if hasnextpage then
+    grab_next_anyway = true
+  end
+
+  if hasnextpage or grab_next_anyway then
     current_start = current_start + 10
+    if not hasnextpage then
+      grab_next_anyway = false
+    end
     return {{url=url_with_start(url, current_start), link_expect_html=0}}
   end
 

@@ -27,6 +27,12 @@ read_gz_file = function(file, amount)
   return data
 end
 
+function count_occurences(str, pattern)
+  local count = 0
+  for _ in str:gmatch(pattern) do count = count + 1 end
+  return count
+end
+
 url_count = 0
 
 url_with_start = function(url, start)
@@ -76,6 +82,12 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
   end
 
   local hasnextpage = string.match(page, '"hasnextpage":true')
+  if not hasnextpage and count_occurences(page, '<span class="link unsubscribe">Unsubscribe</span>') >= 10 then
+    -- Doesn't have next page, but does have 10 results?  Assume
+    -- there's a next page anyway.
+    hasnextpage = true
+  end
+
   if hasnextpage then
     grab_next_anyway = true
   end

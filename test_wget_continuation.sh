@@ -3,12 +3,13 @@ SSL_CERT_DIR=`pwd`/certs ./wget-lua \
 --restrict-file-names=windows \
 -e robots=off \
 -U "Wget/1.14 gzip ArchiveTeam" \
---lua-script=greader.lua \
+--lua-script=greader-directory.lua \
 --warc-file="test_download" \
 --header='Accept-Encoding: gzip' \
+--header='Cookie: $GOOGLE_COOKIE' \
 --warc-header="operator: Archive Team" \
---warc-header="greader-dld-script-version: $VERSION" \
-"https://www.google.com/reader/api/0/stream/contents/feed/http%3A%2F%2Ffeeds.arstechnica.com%2Farstechnica%2FBAaf?r=n&n=1000&hl=en&likes=true&comments=true&client=ArchiveTeam"
+--warc-header="greader-directory-dld-script-version: $VERSION" \
+"https://www.google.com/reader/directory/search?q=galaxy%20nexus"
 
 # Google needs a "gzip" in the UA to believe our "Accept-Encoding: gzip", though other
 # browser UAs should probably work.

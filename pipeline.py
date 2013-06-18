@@ -1,5 +1,3 @@
-1/0 # Not ready yet
-
 r"""
 This file defines a seesaw pipeline for the ArchiveTeam Warrior.
 It can also be run standalone:
@@ -9,19 +7,15 @@ It can also be run standalone:
 
 (or run   run-pipeline --help   for more details)
 
----
-
 This pipeline relies on this code inserted into your universal-tracker redis database:
 
 $ redis-cli
 redis 127.0.0.1:6379> select 13
 OK
-redis 127.0.0.1:6379[13]> set greader:extra_parameters 'data["task_urls_pattern"] = "https://www.google.com/reader/api/0/stream/contents/feed/%s?r=n&n=1000&hl=en&likes=true&comments=true&client=ArchiveTeam"; data["task_urls_url"] = "http://greader-items.dyn.ludios.net:32047/greader-items/" + item[0...6] + "/" + item + ".gz"; data["user_agent"] = "Wget/1.14 gzip ArchiveTeam"; data["wget_timeout"] = "60"; data["wget_tries"] = "20"; data["wget_waitretry"] = "5";'
+redis 127.0.0.1:6379[13]> set greader-directory:extra_parameters 'data["cookie_id"], data["cookie_value"] = open("/home/ivan/directory/cookie", "r") {|f| f.read().strip().split("|", 2)}; data["task_urls"] = item.split("|").map{|q| "https://www.google.com/reader/directory/search?q=" + q}; data["user_agent"] = "Wget/1.14 gzip ArchiveTeam"; data["wget_timeout"] = "60"; data["wget_tries"] = "20"; data["wget_waitretry"] = "5";'
 OK
 
-The HTTP response for task_urls_url should be a gzip-compressed
-newline-separated UTF-8 encoded list of URLs that need to interpolated
-into task_urls_pattern.
+items should be query|another%20query|etc where all queries are already urllib.quote encoded.
 """
 
 import os
@@ -30,8 +24,8 @@ import json
 import os.path
 import shutil
 import time
-import urllib2
 import zlib
+from hashlib import md5
 
 from distutils.version import StrictVersion
 
@@ -120,14 +114,7 @@ class GetItemFromTracker(TrackerRequest):
 			for (k,v) in data.iteritems():
 				item[k] = v
 			##print item
-			if not "task_urls" in item:
-				# If no task_urls in item, we must get them from task_urls_url
-				pattern = item["task_urls_pattern"]
-				task_urls_data = urllib2.urlopen(item["task_urls_url"]).read()
-				item["task_urls"] = list(pattern % (u,) for u in gunzip_string(task_urls_data).rstrip('\n').decode('utf-8').split(u'\n'))
-
-			item.log_output("Received item '%s' from tracker with %d URLs; first URL is %r\n" % (
-				item["item_name"], len(item["task_urls"]), item["task_urls"][0]))
+			item.log_output("Received item %r from tracker; using cookie %r\n" % (item["item_name"], item["cookie_id"]))
 			self.complete_item(item)
 		else:
 			item.log_output("Tracker responded with empty response.\n")
@@ -228,6 +215,10 @@ VERSION = "20130618.01"
 # SimpleTask class and have a process(item) method that is called for
 # each item.
 
+def hash_unicode(s):
+	return md5(s.encode("utf-8")).hexdigest()
+
+
 class PrepareDirectories(SimpleTask):
 	"""
 	  A task that creates temporary directories and initializes filenames.
@@ -248,7 +239,7 @@ class PrepareDirectories(SimpleTask):
 		self.warc_prefix = warc_prefix
 
 	def process(self, item):
-		dirname = "/".join((item["data_dir"], item["item_name"]))
+		dirname = "/".join((item["data_dir"], hash_unicode(item["item_name"])))
 
 		if os.path.isdir(dirname):
 			shutil.rmtree(dirname)
@@ -256,7 +247,7 @@ class PrepareDirectories(SimpleTask):
 
 		item["item_dir"] = dirname
 		item["warc_file_base"] = "%s-%s-%s" % (
-			self.warc_prefix, item["item_name"], time.strftime("%Y%m%d-%H%M%S"))
+			self.warc_prefix, hash_unicode(item["item_name"]), time.strftime("%Y%m%d-%H%M%S"))
 
 		open("%(item_dir)s/%(warc_file_base)s.warc.gz" % item, "w").close()
 
@@ -350,11 +341,12 @@ pipeline = Pipeline(
 			"--timeout", ItemInterpolation("%(wget_timeout)s"),
 			"--tries", ItemInterpolation("%(wget_tries)s"),
 			"--waitretry", ItemInterpolation("%(wget_waitretry)s"),
+			"--header", ItemInterpolation("Cookie: %(cookie_value)s"),
 			"--header", "Accept-Encoding: gzip",
-			"--lua-script", "greader.lua",
+			"--lua-script", "greader-directory.lua",
 			"--warc-file", ItemInterpolation("%(item_dir)s/%(warc_file_base)s"),
 			"--warc-header", "operator: Archive Team",
-			"--warc-header", "greader-dld-script-version: " + VERSION,
+			"--warc-header", "greader-directory-dld-script-version: " + VERSION,
 			"--input", "-"
 		],
 		max_tries=2,

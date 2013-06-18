@@ -1,5 +1,5 @@
 --[[
-Based on https://github.com/ArchiveTeam/wget-lua-forum-scripts/blob/master/vbulletin.lua
+Based on https://github.com/ArchiveTeam/greader-grab/blob/master/greader.lua
 --]]
 
 read_file = function(file, amount)
@@ -64,24 +64,24 @@ wget.callbacks.get_urls = function(file, url, is_css, iri)
     page = read_file(file, 32768) -- returns nil if file is empty
   end
 
-  if not page or string.sub(page, 0, 1) ~= "{" then
-    -- page has no JSON (probably a 404 page)
+  if not page then
     return {}
   end
 
-  local continuation = string.match(page, '"continuation":"(C..........C)"')
-  if continuation then
-    return {{url=url_with_continuation(url, continuation), link_expect_html=0}}
-  end
+  -- TODO!
+  --local continuation = string.match(page, '"continuation":"(C..........C)"')
+  --if continuation then
+  --  return {{url=url_with_continuation(url, continuation), link_expect_html=0}}
+  --end
 
   return {}
 end
 
 wget.callbacks.httploop_result = function(url, err, http_stat)
   code = http_stat.statcode
-  if not (code == 200 or code == 404) then
+  if not code == 200 then
     -- Long delay because people like to run with way too much concurrency
-    delay = 1200
+    delay = 600
 
     io.stdout:write("\nServer returned status "..code.."; this is probably a CAPTCHA page.\n")
     io.stdout:write("You may want to move to another IP.  Waiting for "..delay.." seconds and exiting...\n")

@@ -1,3 +1,5 @@
+1/0 # Not ready yet
+
 r"""
 This file defines a seesaw pipeline for the ArchiveTeam Warrior.
 It can also be run standalone:
@@ -216,7 +218,7 @@ if not WGET_LUA:
 #
 # Update this each time you make a non-cosmetic change.
 # It will be added to the WARC files and reported to the tracker.
-VERSION = "20130613.01"
+VERSION = "20130618.01"
 
 
 ###########################################################################
@@ -296,9 +298,9 @@ class CookWARC(ExternalProcess):
 # This will be shown in the warrior management panel. The logo should not
 # be too big. The deadline is optional.
 project = Project(
-	title="Google Reader",
+	title="Google Reader Feed Directory",
 	project_html="""
-	<h2>Google Reader <span class="links"><a href="http://www.google.com/reader/">Website</a> &middot; <a
+	<h2>Google Reader Feed Directory <span class="links"><a href="http://www.google.com/reader/">Website</a> &middot; <a
 href="http://tracker.archiveteam.org/greader/">Leaderboard</a></span></h2>
 	<p><i>Google Reader</i> is closing July 1st, 2013</p>
   """
@@ -306,9 +308,9 @@ href="http://tracker.archiveteam.org/greader/">Leaderboard</a></span></h2>
 
 ###########################################################################
 try:
-	TRACKER_URL = os.environ["GREADER_TRACKER_URL"]
+	TRACKER_URL = os.environ["GREADER_DIRECTORY_TRACKER_URL"]
 except KeyError:
-	TRACKER_URL = "http://tracker-alt.dyn.ludios.net:9292/greader"
+	TRACKER_URL = "http://tracker-alt.dyn.ludios.net:9292/greader-directory"
 
 
 ###########################################################################
@@ -330,7 +332,7 @@ pipeline = Pipeline(
 	# warc_prefix is the first part of the warc filename
 	#
 	# this task will set item["item_dir"] and item["warc_file_base"]
-	PrepareDirectories(warc_prefix="greader"),
+	PrepareDirectories(warc_prefix="greaderdirectory"),
 
 	# execute Wget+Lua
 	#
